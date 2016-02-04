@@ -68,6 +68,9 @@ function CreateWidget(reason) {
     },
     populateProviderMenu: function(doc) {
       let view = doc.getElementById("PanelUI-shareMenuView");
+      for (let el of [...view.childNodes])
+        el.remove()
+
       let providers = Social.providers.filter(p => p.shareURL);
       for (let provider of providers) {
         let item = createElementWithAttrs(doc, "toolbarbutton", {
