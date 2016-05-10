@@ -15,17 +15,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
 XPCOMUtils.defineLazyModuleGetter(this, "Social",
                                   "resource:///modules/Social.jsm");
 
-function* allBrowserWindows() {
-  var winEnum = Services.wm.getEnumerator("navigator:browser");
-  while (winEnum.hasMoreElements()) {
-    let win = winEnum.getNext();
-    // skip closed windows
-    if (win.closed)
-      continue;
-    yield win;
-  }
-}
-
 function createElementWithAttrs(document, type, attrs) {
   let element = document.createElement(type);
   Object.keys(attrs).forEach(function (attr) {
@@ -42,9 +31,7 @@ function CreateWidget(reason) {
   // PROVIDER_API.
   if (widget && widget.provider == CustomizableUI.PROVIDER_API)
     return;
-  // if upgrading from builtin version and the button was placed in ui,
-  // seenWidget will not be null
-  let seenWidget = CustomizableUI.getPlacementOfWidget("share-menu-button", false, true);
+
   let shareButton = {
     id: "share-menu-button",
     defaultArea: CustomizableUI.AREA_NAVBAR,
@@ -105,7 +92,7 @@ function CreateWidget(reason) {
       node.setAttribute("style", "list-style-image: url(chrome://browser/skin/Toolbar.png); -moz-image-region: rect(0px, 306px, 18px, 288px);");
     },
     observe: function SocialUI_observe(aSubject, aTopic, aData) {
-      for (let win of allBrowserWindows()) {
+      for (let win of CustomizableUI.windows) {
         let document = win.document;
         this.populateProviderMenu(document);
       }
@@ -172,7 +159,7 @@ function sharePage(targetWindow) {
     }
 
     let shareEndpoint = OpenGraphBuilder.generateEndpointURL(provider.shareURL, pageData);
-    window.openDialog(shareEndpoint, "share-dialog");
+    window.open(shareEndpoint, "share-dialog", "chrome");
   }
   }
 }
@@ -190,7 +177,7 @@ function windowProperty(targetWindow) {
 
 var Overlay = {
   startup: function(reason) {
-    for (let win of allBrowserWindows()) {
+    for (let win of CustomizableUI.windows) {
       this.setWindowScripts(win);
     }
     Services.obs.addObserver(this, "browser-delayed-startup-finished", false);
