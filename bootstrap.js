@@ -52,6 +52,7 @@ function CreateWidget(reason) {
       let view = doc.createElement("panelview");
       view.id = "PanelUI-shareMenuView";
       doc.getElementById("PanelUI-multiView").appendChild(view);
+      this.populateProviderMenu(doc);
     },
     populateProviderMenu: function(doc) {
       let view = doc.getElementById("PanelUI-shareMenuView");
@@ -91,7 +92,7 @@ function CreateWidget(reason) {
         return;
       node.setAttribute("style", "list-style-image: url(chrome://browser/skin/Toolbar.png); -moz-image-region: rect(0px, 306px, 18px, 288px);");
     },
-    observe: function SocialUI_observe(aSubject, aTopic, aData) {
+    observe: function(aSubject, aTopic, aData) {
       for (let win of CustomizableUI.windows) {
         let document = win.document;
         this.populateProviderMenu(document);
@@ -184,6 +185,9 @@ var Overlay = {
   },
   shutdown: function(reason) {
     Services.obs.removeObserver(this, "browser-delayed-startup-finished");
+    for (let win of CustomizableUI.windows) {
+      delete win.sharePage;
+    }
   },
   observe: function(window) {
     this.setWindowScripts(window);
@@ -194,17 +198,13 @@ var Overlay = {
 }
 
 function startup(data, reason) {
-    CreateWidget(reason);
-    Overlay.startup(reason);
+  CreateWidget(reason);
+  Overlay.startup(reason);
 }
 
 function shutdown(data, reason) {
-  // For speed sake, we should only do a shutdown if we're being disabled.
-  // On an app shutdown, just let it fade away...
-  if (reason == ADDON_DISABLE) {
-    Overlay.shutdown(reason);
-    CustomizableUI.destroyWidget("sharemenu-button");
-  }
+  Overlay.shutdown(reason);
+  CustomizableUI.destroyWidget("share-menu-button");
 }
 
 function install() {
