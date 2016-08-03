@@ -59,6 +59,25 @@ function CreateWidget(reason) {
       for (let el of [...view.childNodes])
         el.remove()
 
+      let item = createElementWithAttrs(doc, "toolbarbutton", {
+        "class": "subviewbutton",
+        "label": "Copy Address",
+        "oncommand": `var clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].
+                        getService(Ci.nsIClipboardHelper);
+                      clipboard.copyString(gBrowser.currentURI.spec);`
+      });
+      view.appendChild(item);
+      item = createElementWithAttrs(doc, "toolbarbutton", {
+        "class": "subviewbutton",
+        "label": "Email Link...",
+        "oncommand": "MailIntegration.sendLinkForBrowser(gBrowser.selectedBrowser);"
+      });
+      view.appendChild(item);
+      item = createElementWithAttrs(doc, "menuseparator", {
+        "id": "menu_shareMenuSeparator"
+      });
+      view.appendChild(item);
+
       let providers = Social.providers.filter(p => p.shareURL);
       for (let provider of providers) {
         let item = createElementWithAttrs(doc, "toolbarbutton", {
@@ -73,7 +92,7 @@ function CreateWidget(reason) {
 
       let url = Services.prefs.getCharPref("social.directories").split(',')[0];
 
-      let item = createElementWithAttrs(doc, "toolbarbutton", {
+      item = createElementWithAttrs(doc, "toolbarbutton", {
         "class": "subviewbutton",
         "label": "Add Service...",
         "oncommand": 'openUILinkIn("'+url+'", "tab");'
