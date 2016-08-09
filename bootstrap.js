@@ -110,6 +110,7 @@ function CreateWidget(reason) {
       if (!node || node.id != this.id)
         return;
       node.setAttribute("style", "list-style-image: url(chrome://browser/skin/Toolbar.png); -moz-image-region: rect(0px, 306px, 18px, 288px);");
+      node.setAttribute("observes", "Social:PageShareOrMark");
     },
     observe: function(aSubject, aTopic, aData) {
       for (let win of CustomizableUI.windows) {
