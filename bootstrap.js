@@ -125,73 +125,70 @@ function CreateWidget(reason) {
 
 };
 
-// sharePage based on SocialShare.sharePage in browser-social.js
+// based on SocialShare.sharePage in browser-social.js
 // target would be item clicked on for a context menu, but not handled in this demo
-function sharePage(targetWindow) {
-  let window = targetWindow;
-  return function(providerOrigin, graphData, target) {
-    with (window) { // XXX hacky and slow, make sure we have scope
-    // graphData is an optional param that either defines the full set of data
-    // to be shared, or partial data about the current page. It is set by a call
-    // in mozSocial API, or via nsContentMenu calls. If it is present, it MUST
-    // define at least url. If it is undefined, we're sharing the current url in
-    // the browser tab.
-    let pageData = graphData ? graphData : null;
-    let sharedURI = pageData ? Services.io.newURI(pageData.url, null, null) :
-                                gBrowser.currentURI;
-    if (!SocialUI.canShareOrMarkPage(sharedURI))
-      return;
-
-    // the point of this action type is that we can use existing share
-    // endpoints (e.g. oexchange) that do not support additional
-    // socialapi functionality.  One tweak is that we shoot an event
-    // containing the open graph data.
-    let _dataFn;
-    if (!pageData || sharedURI == gBrowser.currentURI) {
-      messageManager.addMessageListener("PageMetadata:PageDataResult", _dataFn = (msg) => {
-        messageManager.removeMessageListener("PageMetadata:PageDataResult", _dataFn);
-        let pageData = msg.json;
-        if (graphData) {
-          // overwrite data retreived from page with data given to us as a param
-          for (let p in graphData) {
-            pageData[p] = graphData[p];
-          }
-        }
-        sharePage(providerOrigin, pageData, target);
-      });
-      gBrowser.selectedBrowser.messageManager.sendAsyncMessage("PageMetadata:GetPageData", null, { target });
-      return;
-    }
-    // if this is a share of a selected item, get any microformats
-    if (!pageData.microformats && target) {
-      messageManager.addMessageListener("PageMetadata:MicroformatsResult", _dataFn = (msg) => {
-        messageManager.removeMessageListener("PageMetadata:MicroformatsResult", _dataFn);
-        pageData.microformats = msg.data;
-        sharePage(providerOrigin, pageData, target);
-      });
-      gBrowser.selectedBrowser.messageManager.sendAsyncMessage("PageMetadata:GetMicroformats", null, { target });
-      return;
-    }
-
-    let provider = Social._getProviderFromOrigin(providerOrigin);
-    if (!provider || !provider.shareURL) {
-      return;
-    }
-
-    let shareEndpoint = OpenGraphBuilder.generateEndpointURL(provider.shareURL, pageData);
-    window.open(shareEndpoint, "share-dialog", "chrome");
-  }
-  }
-}
-
-function windowProperty(targetWindow) {
+function windowProperty(window) {
   return {
-    get: function() {
-      // delete any getters for properties loaded from main.js so we only load main.js once
-      return sharePage(targetWindow);
-    },
     configurable: true,
-    enumerable: true
+    enumerable: true,
+    writable: true,
+    value: function(providerOrigin, graphData, target) {
+      let SocialUI = window.SocialUI;
+      let Social = window.Social;
+      let messageManager = window.messageManager;
+      let gBrowser = window.gBrowser;
+      let OpenGraphBuilder = window.OpenGraphBuilder;
+      let sharePage = window.sharePage;
+      // graphData is an optional param that either defines the full set of data
+      // to be shared, or partial data about the current page. It is set by a call
+      // in mozSocial API, or via nsContentMenu calls. If it is present, it MUST
+      // define at least url. If it is undefined, we're sharing the current url in
+      // the browser tab.
+      let pageData = graphData ? graphData : null;
+      let sharedURI = pageData ? Services.io.newURI(pageData.url, null, null) :
+                                  gBrowser.currentURI;
+      if (!SocialUI.canShareOrMarkPage(sharedURI))
+        return;
+
+      // the point of this action type is that we can use existing share
+      // endpoints (e.g. oexchange) that do not support additional
+      // socialapi functionality.  One tweak is that we shoot an event
+      // containing the open graph data.
+      let _dataFn;
+      if (!pageData || sharedURI == gBrowser.currentURI) {
+        messageManager.addMessageListener("PageMetadata:PageDataResult", _dataFn = (msg) => {
+          messageManager.removeMessageListener("PageMetadata:PageDataResult", _dataFn);
+          let pageData = msg.json;
+          if (graphData) {
+            // overwrite data retreived from page with data given to us as a param
+            for (let p in graphData) {
+              pageData[p] = graphData[p];
+            }
+          }
+          sharePage(providerOrigin, pageData, target);
+        });
+        gBrowser.selectedBrowser.messageManager.sendAsyncMessage("PageMetadata:GetPageData", null, { target });
+        return;
+      }
+      // if this is a share of a selected item, get any microformats
+      if (!pageData.microformats && target) {
+        messageManager.addMessageListener("PageMetadata:MicroformatsResult", _dataFn = (msg) => {
+          messageManager.removeMessageListener("PageMetadata:MicroformatsResult", _dataFn);
+          pageData.microformats = msg.data;
+          sharePage(providerOrigin, pageData, target);
+        });
+        gBrowser.selectedBrowser.messageManager.sendAsyncMessage("PageMetadata:GetMicroformats", null, { target });
+        return;
+      }
+
+      let provider = Social._getProviderFromOrigin(providerOrigin);
+      if (!provider || !provider.shareURL) {
+        return;
+      }
+
+      let shareEndpoint = OpenGraphBuilder.generateEndpointURL(provider.shareURL, pageData);
+      window.open(shareEndpoint, "share-dialog", "chrome");
+    }
   };
 }
 
