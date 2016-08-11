@@ -204,6 +204,8 @@ var Overlay = {
     Services.obs.removeObserver(this, "browser-delayed-startup-finished");
     for (let win of CustomizableUI.windows) {
       delete win.sharePage;
+      if (win.SocialShare.shareButton)
+        win.SocialShare.shareButton.removeAttribute("hidden");
     }
   },
   observe: function(window) {
@@ -211,6 +213,8 @@ var Overlay = {
   },
   setWindowScripts: function(window) {
     Object.defineProperty(window, "sharePage", windowProperty(window));
+    if (window.SocialShare.shareButton)
+      window.SocialShare.shareButton.setAttribute("hidden", "true");
   }
 }
 
