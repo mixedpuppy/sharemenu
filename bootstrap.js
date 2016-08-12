@@ -111,6 +111,13 @@ function CreateWidget(reason) {
         return;
       node.setAttribute("style", "list-style-image: url(chrome://browser/skin/Toolbar.png); -moz-image-region: rect(0px, 306px, 18px, 288px);");
       node.setAttribute("observes", "Social:PageShareOrMark");
+
+      CustomizableUI.addListener(this);
+      Services.obs.addObserver(this, "social:providers-changed", false);
+    },
+    onDestroyed: function() {
+      CustomizableUI.removeListener(this);
+      Services.obs.removeObserver(this, "social:providers-changed");
     },
     observe: function(aSubject, aTopic, aData) {
       for (let win of CustomizableUI.windows) {
@@ -121,9 +128,6 @@ function CreateWidget(reason) {
   };
 
   CustomizableUI.createWidget(shareButton);
-  CustomizableUI.addListener(shareButton);
-  Services.obs.addObserver(shareButton, "social:providers-changed", false);
-
 };
 
 // based on SocialShare.sharePage in browser-social.js
