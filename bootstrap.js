@@ -124,6 +124,7 @@ function CreateWidget(reason) {
   CustomizableUI.addListener(shareButton);
   Services.obs.addObserver(shareButton, "social:providers-changed", false);
 
+  return shareButton;
 };
 
 // based on SocialShare.sharePage in browser-social.js
@@ -218,14 +219,18 @@ var Overlay = {
   }
 }
 
+let _button = null;
 function startup(data, reason) {
-  CreateWidget(reason);
+  _button = CreateWidget(reason);
   Overlay.startup(reason);
 }
 
 function shutdown(data, reason) {
-  Overlay.shutdown(reason);
   CustomizableUI.destroyWidget("share-menu-button");
+  Overlay.shutdown(reason);
+  CustomizableUI.removeListener(_button);
+  Services.obs.removeObserver(_button, "social:providers-changed");
+
 }
 
 function install() {
